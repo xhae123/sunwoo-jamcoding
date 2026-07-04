@@ -1,0 +1,9 @@
+# 기상청 서비스키 — 절대 커밋 금지
+.env
+
+# 파이썬
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store

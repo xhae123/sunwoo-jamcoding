@@ -49,22 +49,39 @@
 
 ```
 sunwoo-jamcoding/
+├── SKILL.md                ← Claude Code 스킬 정의 (실행 절차 + 큐레이션 지침)
+├── scripts/
+│   ├── fetch_weather.py    ← 기상청 API fetch·파싱
+│   └── render.py           ← HTML·디자인 렌더링
 ├── index.html              ← 시작점. 지금까지 쌓인 하루들 (최신순)
 ├── pages/
 │   └── 2026-07-04.html     ← 하루 페이지 한 장
 ├── data/
 │   └── 2026-07-04.json     ← 그날의 원본 (날씨 + 큐레이션). 다시 그릴 때 쓰는 재료
-└── assets/
-    └── style.css           ← 공유 디자인 (매 렌더마다 새로 씀)
+├── assets/
+│   └── style.css           ← 공유 디자인 (매 렌더마다 새로 씀)
+└── .env.example            ← 기상청 서비스키 넣는 곳 (실제 .env는 커밋 안 함)
 ```
 
-실행 로직(날씨 fetch·렌더 스크립트)은 Claude Code **스킬**에 들어있습니다:
-`~/.claude/skills/oneul-mwohaji/`
+이 레포 **자체가 스킬**입니다. `~/.claude/skills/oneul-mwohaji`가 이 레포로 심링크되어 있어,
+스크립트·사이트·스킬 정의가 한 곳에 모여 있습니다. (single source of truth)
 
 ---
 
 ## 실행하기
 
+### 준비 (최초 1회)
+기상청 서비스키가 필요합니다. [공공데이터포털](https://www.data.go.kr)에서
+`기상청_단기예보 조회서비스(VilageFcstInfoService_2.0)` 활용신청 후,
+발급받은 키를 `.env`에 넣으세요.
+
+```bash
+cp .env.example .env
+# .env 를 열어 KMA_SERVICE_KEY=발급받은키 로 채우기
+```
+> `.env`는 `.gitignore` 처리되어 공개 레포에 **키가 올라가지 않습니다.**
+
+### 매일
 Claude Code에서 한 줄이면 끝납니다.
 
 ```
@@ -73,6 +90,13 @@ Claude Code에서 한 줄이면 끝납니다.
 
 또는 그냥 **"오늘 뭐하지"** 라고 말해도 됩니다.
 그러면 → 날씨 가져오고 → 오늘 큐레이션 만들고 → 페이지 뽑고 → 브라우저로 열어줍니다.
+같은 날 다시 돌리면 이미 있는 페이지를 건너뜁니다.
+
+### 스크립트만 직접
+```bash
+python3 scripts/fetch_weather.py 2026-07-04   # 날씨 JSON 출력
+python3 scripts/render.py 2026-07-04          # data/ → HTML 렌더
+```
 
 ---
 
