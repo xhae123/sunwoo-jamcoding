@@ -64,6 +64,8 @@ body{
   font-feature-settings:'ss01','cv01';
   -webkit-font-smoothing:antialiased;
   word-break:keep-all;  /* 한글은 어절 단위로만 줄바꿈 */
+  overflow-x:hidden;    /* 모바일 가로 스크롤 방지 */
+  -webkit-tap-highlight-color:transparent;
 }
 .wrap{max-width:720px;margin:0 auto;padding:0 24px}
 a{color:inherit;text-decoration:none}
@@ -93,6 +95,7 @@ a{color:inherit;text-decoration:none}
   color:var(--muted);margin-bottom:8px}
 .rec{display:grid;grid-template-columns:auto 1fr;gap:22px;
   padding:34px 0;border-top:1px solid var(--line)}
+.rec>div{min-width:0}  /* grid 자식이 긴 텍스트에 밀려 넘치지 않게 → 정상 줄바꿈 */
 .rec .num{font-size:.95rem;font-weight:700;color:var(--accent);
   font-variant-numeric:tabular-nums;padding-top:.35em}
 .rec .meta{font-size:.76rem;letter-spacing:.05em;color:var(--muted);
@@ -131,14 +134,91 @@ footer a{color:var(--accent);font-weight:600}
 .day .w{color:var(--accent);font-weight:700;white-space:nowrap;
   font-variant-numeric:tabular-nums}
 .empty{padding:20vh 0;color:var(--muted);text-align:center}
+
+/* ── 모션 ── */
+@keyframes riseBlur{from{opacity:0;transform:translateY(46px);filter:blur(12px)}
+  to{opacity:1;transform:translateY(0);filter:blur(0)}}
+@keyframes rise{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes idxPop{from{opacity:0;transform:translateY(64px) scale(.94)}to{opacity:1;transform:none}}
+
+/* 히어로: 로드 즉시 등장 (JS 없어도 보이게 .js 게이트) */
+.js .hero .kicker{animation:rise .7s .05s both cubic-bezier(.2,.75,.2,1)}
+.js .hero .mood{animation:riseBlur 1.05s .16s both cubic-bezier(.2,.75,.2,1)}
+.js .hero .summary{animation:rise .8s .44s both cubic-bezier(.2,.75,.2,1)}
+.js .weather .cell{animation:rise .6s both cubic-bezier(.2,.75,.2,1);opacity:0}
+.js .weather .cell:nth-child(1){animation-delay:.52s}
+.js .weather .cell:nth-child(2){animation-delay:.60s}
+.js .weather .cell:nth-child(3){animation-delay:.68s}
+.js .weather .cell:nth-child(4){animation-delay:.76s}
+.js .recs-h{animation:rise .7s .1s both}
+
+/* 스크롤 진입 리빌 (추천/팁/푸터) */
+.js .reveal{opacity:0;transform:translateY(42px);
+  transition:opacity .75s cubic-bezier(.2,.75,.2,1),transform .75s cubic-bezier(.2,.75,.2,1)}
+.js .reveal.in{opacity:1;transform:none}
+
+/* 인덱스 대형 등장 */
+.js .idx-hero h1{animation:riseBlur 1.15s .08s both cubic-bezier(.2,.75,.2,1)}
+.js .idx-hero p{animation:rise .8s .42s both cubic-bezier(.2,.75,.2,1)}
+
+/* 호버 미세 인터랙션 */
+.rec h2{transition:transform .3s cubic-bezier(.2,.75,.2,1)}
+.rec .place{display:inline-block;transition:transform .3s cubic-bezier(.2,.75,.2,1)}
+.rec:hover h2{transform:translateX(4px)}
+.rec:hover .place{transform:translateX(8px)}
+.weather .cell .val{transition:transform .3s ease}
+.weather .cell:hover .val{transform:translateY(-3px)}
+
+/* ── 모바일 ── */
+@media (max-width:560px){
+  .wrap{padding:0 18px}
+  .hero{padding:13vh 0 6vh}
+  .mood{font-size:clamp(1.9rem,8vw,3rem);letter-spacing:-.035em}
+  .summary{font-size:1.05rem}
+  .weather{grid-template-columns:1fr 1fr}
+  .weather .cell{padding:18px 0;border-bottom:1px solid var(--line);padding-left:16px}
+  .weather .cell:nth-child(2n+1){padding-left:0}
+  .weather .cell:nth-child(2n){border-right:0}
+  .weather .cell:nth-child(3),.weather .cell:nth-child(4){border-bottom:0}
+  .weather .val{font-size:1.35rem}
+  .recs{padding:6vh 0 2vh}
+  .rec{gap:14px;padding:26px 0}
+  .rec .num{padding-top:.25em}
+  .rec h2{font-size:clamp(1.3rem,5.6vw,1.7rem)}
+  .tip{padding:22px 20px;margin:5vh 0}
+  footer{padding:6vh 0 14vh}
+  .idx-hero{padding:12vh 0 5vh}
+  .idx-hero p{font-size:1.05rem}
+  .day{gap:8px 14px;padding:26px 0}
+  .day .d{min-width:4.8ch;font-size:1.05rem}
+  .day .m{font-size:1.02rem}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .js .reveal{opacity:1;transform:none;transition:none}
+  *{animation:none!important}
+}
 """
 
 HEAD = """<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script>document.documentElement.classList.add('js')</script>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" href="{css}">
 <title>{title}</title>"""
+
+# 스크롤 진입 시 .reveal 요소를 순차로 등장시킨다. JS 없거나 옵저버 미지원이면 그냥 보여준다.
+REVEAL_JS = """<script>
+(function(){
+  var els=document.querySelectorAll('.reveal');
+  if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+  },{threshold:.14,rootMargin:'0px 0px -8% 0px'});
+  els.forEach(function(e){io.observe(e);});
+})();
+</script>"""
 
 
 def render_day(payload):
@@ -174,14 +254,15 @@ def render_day(payload):
         io = "실내" if r.get("indoor") else "실외"
         meta = " · ".join(filter(None, [esc(r.get("time")), esc(r.get("tag")), io]))
         rec_html.append(
-            f'<article class="rec"><div class="num">{i:02d}</div><div>'
+            f'<article class="rec reveal" style="transition-delay:{(i-1)*70}ms">'
+            f'<div class="num">{i:02d}</div><div>'
             f'<div class="meta">{meta}</div>'
             f'<h2>{esc(r.get("title"))}</h2>'
             f'<div class="place">↳ {esc(r.get("place"))}</div>'
             f'<p class="why">{esc(r.get("why"))}</p></div></article>')
 
     tip = payload.get("tip")
-    tip_html = (f'<div class="tip"><div class="lab">오늘의 팁</div>'
+    tip_html = (f'<div class="tip reveal"><div class="lab">오늘의 팁</div>'
                 f'<p>{esc(tip)}</p></div>') if tip else ""
 
     body = f"""<div class="wrap" style="--accent:{accent}">
@@ -196,25 +277,28 @@ def render_day(payload):
   {"".join(rec_html)}
 </section>
 {tip_html}
-<footer>
+<footer class="reveal">
   <span>{esc(gen)} · 기상청 단기예보 기반</span>
   <a href="../index.html">← 전체 보기</a>
 </footer>
 </div>"""
     head = HEAD.format(css="../assets/style.css",
                        title=f'{d.strftime("%m.%d")} {wd} · 오늘 뭐하지')
-    return f"<!doctype html><html lang='ko'><head>{head}</head><body>{body}</body></html>"
+    return (f"<!doctype html><html lang='ko'><head>{head}</head>"
+            f"<body>{body}{REVEAL_JS}</body></html>")
 
 
 def render_index(payloads):
     payloads.sort(key=lambda p: p["date"], reverse=True)
     rows = []
-    for p in payloads:
+    for idx, p in enumerate(payloads):
         d, wd = kdate(p["date"])
         today = p.get("weather", {}).get("today", {})
         cond = CONDITION.get(today.get("condition", "clear"), CONDITION["clear"])
+        delay = 0.45 + idx * 0.07
         rows.append(
-            f'<a class="day" href="pages/{p["date"]}.html" style="--accent:{cond["accent"]}">'
+            f'<a class="day" href="pages/{p["date"]}.html" '
+            f'style="--accent:{cond["accent"]};animation:idxPop .8s {delay:.2f}s both cubic-bezier(.2,.75,.2,1)">'
             f'<div class="d">{d.strftime("%m.%d")}<small>{wd}</small></div>'
             f'<div class="m">{esc(p.get("mood"))}</div>'
             f'<div class="w">{cond["glyph"]} {temp(today.get("tmx"))}</div></a>')
@@ -230,7 +314,8 @@ def render_index(payloads):
 </header>
 <section class="days">{body_rows}</section>
 </div>"""
-    return f"<!doctype html><html lang='ko'><head>{head}</head><body>{body}</body></html>"
+    return (f"<!doctype html><html lang='ko'><head>{head}</head>"
+            f"<body>{body}{REVEAL_JS}</body></html>")
 
 
 def main():

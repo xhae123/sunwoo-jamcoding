@@ -1,5 +1,6 @@
 <!doctype html><html lang='ko'><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script>document.documentElement.classList.add('js')</script>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" href="assets/style.css">
@@ -8,5 +9,14 @@
   <h1>오늘<br>뭐하지</h1>
   <p>분당 서현동 · 매일 새로 큐레이션되는 하루</p>
 </header>
-<section class="days"><a class="day" href="pages/2026-07-04.html" style="--accent:#4E7290"><div class="d">07.04<small>토</small></div><div class="m">소나기 지나면 맑게 갤 거예요, 저녁 산책이 기다리는 하루</div><div class="w">◐ 31°</div></a></section>
-</div></body></html>
+<section class="days"><a class="day" href="pages/2026-07-04.html" style="--accent:#4E7290;animation:idxPop .8s 0.45s both cubic-bezier(.2,.75,.2,1)"><div class="d">07.04<small>토</small></div><div class="m">소나기 지나면 맑게 갤 거예요, 저녁 산책이 기다리는 하루</div><div class="w">◐ 31°</div></a></section>
+</div><script>
+(function(){
+  var els=document.querySelectorAll('.reveal');
+  if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+  },{threshold:.14,rootMargin:'0px 0px -8% 0px'});
+  els.forEach(function(e){io.observe(e);});
+})();
+</script></body></html>
